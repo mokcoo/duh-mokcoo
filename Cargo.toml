@@ -1,0 +1,11 @@
+[package]
+name = "dua-mokcoo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.31", features = ["derive"] }
+wild = "2.0.4"
+num_cpus = "1.10.0"
+crossbeam = "0.8"
+jwalk = "0.8.1"
