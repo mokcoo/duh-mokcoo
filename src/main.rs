@@ -6,10 +6,10 @@ use clap::Parser;
 
 mod options;
 mod crossdev;
-
+mod traverse;
 fn cwd_dirlist() -> Result<Vec<PathBuf>, io::Error> {
     let mut v: Vec<_> = fs::read_dir(".")?
-        .filter_map(|e| {
+        .filter_map(|e: Result<fs::DirEntry, io::Error>| {
             e.ok()
                 .and_then(|e| e.path().strip_prefix(".").ok().map(ToOwned::to_owned))
         })
@@ -57,27 +57,25 @@ fn extract_paths_maybe_set_cwd(
 
 type WalkDir = jwalk::WalkDirGeneric<((), Option<Result<std::fs::Metadata, jwalk::Error>>)>;
 
-fn main() {
-    let opt = options::Arg::parse_from(wild::args_os());
-    let num_cpu = num_cpus::get();
-    // print!("{:?}", opt);
-    // print!("{:?}", num_cpu);
+fn agg() {
     let paths = vec![];
     let ignore_dir = vec![PathBuf::from("target".to_string())];
+    let mut total = 0u128;
     for f in  extract_paths_maybe_set_cwd(paths, false).unwrap().iter(){
         // println!("{}", f.display());
         // if f.is_dir() {
         //     println!("{} is dir", f.display());
         // }
-        if ignore_dir.contains(&f) {
-            continue;
-        }
+        // if ignore_dir.contains(&f) {
+        //     continue;
+        // }
         for path in WalkDir::new(f).follow_links(false).sort(true).process_read_dir(|_,_,_,dir_entry_result| {
             dir_entry_result.iter_mut().for_each(|dir_entry_result| {
                 if let Ok(dir_entry) = dir_entry_result{
                     // println!("{}", dir_entry.path().display());
                     let metadata = dir_entry.metadata();
                     dir_entry.client_state = Some(metadata);
+                    // dir_entry.
                 }
             });
         }) {
@@ -94,7 +92,8 @@ fn main() {
                         Some(Ok(meta)) => meta.len(),
                         _ => 0,
                     };
-                    println!("{} device_id: {}, file len: {}", path_name, device_id, file_len);
+                    total += file_len as u128;
+                    // println!("{} device_id: {}, file len: {}", path_name, device_id, file_len);
 
                 }
                 Err(e) => {
@@ -105,12 +104,23 @@ fn main() {
         }
 
     };
-    // cwd_dirlist().map(|f| {
-    //     for p in f {
-    //         println!("{}", p.display());;
-    //     }
-    // }).unwrap();
-    // println!("Hello, world!");
+    println!("Total: {}", total);
+    cwd_dirlist().map(|f| {
+        for p in f {
+            println!("{}", p.display());;
+        }
+    }).unwrap();
+    println!("Hello, world!");
+}
+
+fn int(){
+
+}
+fn main() {
+    let opt = options::Arg::parse_from(wild::args_os());
+    let num_cpu = num_cpus::get();
+    // agg();
+
 }
 
 #[cfg(test)]
